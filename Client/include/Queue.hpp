@@ -9,8 +9,9 @@ public:
     Queue();
     void add(const T& element);
     T get();
+    bool isEmpty();
 private:
-    std::deque<T> data;
+    std::deque<T> _data;
 };
 
 #endif //CODEWITHME_QUEUE_HPP

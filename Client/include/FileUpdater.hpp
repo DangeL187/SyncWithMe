@@ -16,18 +16,16 @@
 
 class FileUpdater {
 public:
-    explicit FileUpdater(Queue<Request>* requests);
+    FileUpdater();
 
-    void addAllowedFolder(const std::string& folder_path);
-    // todo: add interaction with allowed folders - removing, etc.
+    void addAllowedFolder(const std::string& folder_path); // todo: add interaction with allowed folders - removing, etc.
+    void blockFile(const std::string& file_path, bool value);
+    void checkFilesForUpdate(Queue<Request>& requests);
+    void processRequest(Request& request); // todo: add implementation, #async
 
 private:
     std::unordered_set<std::string>         _allowed_folders;
     std::unordered_map<std::string, File>   _files;
-    Queue<Request>*                         _requests;
-
-    void addRequest(const std::string& old_file_path, const std::string& file_path);
-    [[noreturn]] void traverseFiles();
 };
 
 #endif //CODEWITHME_FILEUPDATER_HPP

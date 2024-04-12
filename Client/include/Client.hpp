@@ -4,25 +4,31 @@
 #include <fstream>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
+#include <boost/asio/thread_pool.hpp>
+#include <boost/asio/post.hpp>
+
+#include "FileUpdater.hpp"
 #include "Queue.hpp"
 #include "Request/Request.hpp"
-
-class FileUpdater;
 
 class Client {
 public:
     Client();
 
 private:
-    std::shared_ptr<FileUpdater>    _file_updater;
-    Queue<Request>                  _requests_received;
-    Queue<Request>                  _requests_to_send;
+    FileUpdater                 _file_updater;
+    Queue<Request>              _requests_received;
+    Queue<Request>              _requests_to_send;
+    std::mutex                  _sender_mutex;
+    boost::asio::thread_pool    _thread_pool{2};
 
-    void receiver();
-    void sender();
+    [[noreturn]] void receiver();
+    void sendRequests();
+    [[noreturn]] void updater();
 };
 
 #endif //CODEWITHME_CLIENT_HPP
