@@ -39,6 +39,7 @@ bool Request::isValid() const {
 }
 
 std::string Request::toJson() {
+    // todo: add real to json conversion
     for (auto& i: _data.getSes().getSequence()) {
         if (i.second.type == 1) std::cout << i.second.afterIdx << ": + ";
         else if (i.second.type == -1) std::cout << i.second.beforeIdx << ": - ";

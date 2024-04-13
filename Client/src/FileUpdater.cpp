@@ -41,3 +41,11 @@ void FileUpdater::checkFilesForUpdate(Queue<Request>& requests) {
         }
     }
 }
+
+void FileUpdater::processRequests(Queue<Request>& requests) {
+    while (!requests.isEmpty()) {
+        std::cout << "processing request from server\n";
+        requests.get().toJson();
+        std::cout << "end of processing\n";
+    }
+}

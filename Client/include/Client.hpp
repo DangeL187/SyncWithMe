@@ -3,9 +3,9 @@
 
 #include <fstream>
 #include <map>
-#include <memory>
 #include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include <boost/asio/thread_pool.hpp>
@@ -21,6 +21,7 @@ public:
 
 private:
     FileUpdater                 _file_updater;
+    std::mutex                  _process_request_mutex;
     Queue<Request>              _requests_received;
     Queue<Request>              _requests_to_send;
     std::mutex                  _sender_mutex;
