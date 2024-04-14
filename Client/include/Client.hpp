@@ -20,12 +20,17 @@ public:
     Client();
 
 private:
+    /*========================Client========================*/
     FileUpdater                 _file_updater;
-    std::mutex                  _process_request_mutex;
     Queue<Request>              _requests_received;
     Queue<Request>              _requests_to_send;
+    /*======================================================*/
+
+    /*=======================threads========================*/
+    std::mutex                  _process_request_mutex;
     std::mutex                  _sender_mutex;
     boost::asio::thread_pool    _thread_pool{2};
+    /*======================================================*/
 
     [[noreturn]] void receiver();
     void sendRequests();

@@ -8,7 +8,7 @@
 #include <iomanip>
 
 struct FileHasher {
-    static std::string calculateHash(const std::string& file_path);
+    static std::string hash(const std::wstring& file_path);
 };
 
 #endif //CODEWITHME_FILEHASHER_HPP

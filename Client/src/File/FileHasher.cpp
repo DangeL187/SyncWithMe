@@ -1,9 +1,11 @@
 #include "File/FileHasher.hpp"
 
-std::string FileHasher::calculateHash(const std::string& file_path) {
-    std::ifstream f(file_path, std::ios::binary);
+#include <iostream>
+
+std::string FileHasher::hash(const std::wstring& file_path) {
+    std::ifstream f(file_path.c_str(), std::ios::binary);
     if (!f.is_open()) {
-        throw std::runtime_error("Unable to open file");
+        return "";
     }
 
     std::stringstream ss;
