@@ -15,6 +15,9 @@ Request::Request(const std::string& shared_file_path, bool is_deleted) {
 }
 
 Request::Request(const std::string& shared_file_path, const std::string& old_file_path, const std::string& new_file_path) {
+    // {"changes":null,"deleted":0,"file":"example_shared/test_changes.txt","new_file_name":""}
+    // invalidate it
+
     _file_path = shared_file_path;
 
     std::ifstream old_file(std::filesystem::path(old_file_path).c_str());
@@ -59,14 +62,9 @@ std::string Request::toJson() {
     request["new_file_name"] = _new_file_name;
 
     for (auto& i: _data.getSes().getSequence()) {
-        nlohmann::json change;
-        change["type"] = i.second.type;
-        if (i.second.type == 1) change["line"] = i.second.afterIdx;
-        else if (i.second.type == -1) change["line"] = i.second.beforeIdx;
+        if (i.second.type == 1) changes[std::to_string(i.second.afterIdx)] = i.first;
+        else if (i.second.type == -1) changes[std::to_string(-i.second.beforeIdx)] = "";
         else continue;
-        change["content"] = i.first;
-
-        changes.push_back(change);
     }
 
     request["changes"] = changes;

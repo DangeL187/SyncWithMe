@@ -1,18 +1,19 @@
 #include "Queue.hpp"
 
 #include "Request/Request.hpp"
+#include "Response/Response.hpp"
 
 template <>
 Queue<Request>::Queue() = default;
 template <>
-Queue<std::string>::Queue() = default;
+Queue<Response>::Queue() = default;
 
 template <>
 void Queue<Request>::add(const Request& element) {
     _data.push_back(element);
 }
 template <>
-void Queue<std::string>::add(const std::string& element) {
+void Queue<Response>::add(const Response& element) {
     _data.push_back(element);
 }
 
@@ -21,7 +22,7 @@ bool Queue<Request>::isEmpty() {
     return (_data.empty());
 }
 template <>
-bool Queue<std::string>::isEmpty() {
+bool Queue<Response>::isEmpty() {
     return (_data.empty());
 }
 
@@ -36,9 +37,9 @@ Request Queue<Request>::get() {
     }
 }
 template <>
-std::string Queue<std::string>::get() {
+Response Queue<Response>::get() {
     try {
-        std::string data_to_return = _data.front();
+        Response data_to_return = _data.front();
         _data.pop_front();
         return data_to_return;
     } catch (std::exception& e) {

@@ -1,30 +1,23 @@
 #include "FileUpdater.hpp"
 
-#include "File/FileHasher.hpp"
-#include "Request/Request.hpp"
-
 FileUpdater::FileUpdater() {
     if (!std::filesystem::exists("../TEMP")) {
         std::filesystem::create_directory("../TEMP");
     }
 }
 
-void FileUpdater::addAllowedFolder(const std::string& folder_path, const std::string& folder_name) {
-    _allowed_folders.insert({folder_path, folder_name});
-}
-
-void FileUpdater::blockFile(const std::string& file_path, bool value) {
-    auto it = _files.find(file_path);
-    if (it != _files.end()) {
-        it->second.is_blocked = value;
+void FileUpdater::addSharedFolder(const std::string& folder_name, const std::string& folder_path) {
+    if (!std::filesystem::exists(folder_path)) {
+        std::filesystem::create_directory(folder_path);
     }
+    _shared_folders.insert({folder_name, folder_path});
 }
 
 void FileUpdater::checkFilesForUpdate(Queue<Request>& requests) {
-    for (const auto& shared_folder: _allowed_folders) {
+    for (const auto& shared_folder: _shared_folders) {
         unsigned long long files_amount = 0;
         std::unordered_map<std::string, File> renamed_files;
-        for (const auto& entry: std::filesystem::recursive_directory_iterator(shared_folder.first)) {
+        for (const auto& entry: std::filesystem::recursive_directory_iterator(shared_folder.second)) {
             std::wstring w_full_file_path = entry.path().wstring();
             std::string full_file_path = _converter.to_bytes(w_full_file_path);
 
@@ -33,28 +26,29 @@ void FileUpdater::checkFilesForUpdate(Queue<Request>& requests) {
             std::string hash = FileHasher::hash(w_full_file_path);
 
             local_file_path = full_file_path;
-            local_file_path.erase(0, shared_folder.first.size()+1);
-            shared_file_path = shared_folder.second + "/" + local_file_path;
+            local_file_path.erase(0, shared_folder.second.size()+1);
+            shared_file_path = shared_folder.first + "/" + local_file_path;
             local_file_path = "../TEMP/" + shared_file_path;
 
-            auto it = _files.find(full_file_path);
-            if (it == _files.end()) {
-                File file(full_file_path, hash);
-                file.save(local_file_path);
+            File& file = _files[shared_file_path];
 
-                for (auto& i: _files) {
-                    if (i.second.hash == hash) {
-                        renamed_files.insert({hash, file});
+            if (!file.isValid()) {
+                File new_file(full_file_path, hash);
+                new_file.save(local_file_path);
+
+                for (auto& file2: _files) {
+                    if (file2.second.hash == hash) {
+                        renamed_files.insert({hash, new_file});
                     }
                 }
 
-                _files.insert({full_file_path, file});
+                _files.insert({shared_file_path, new_file});
             }
-            else if (!it->second.is_blocked && !hash.empty() && it->second.hash != hash) {
-                std::cout << shared_file_path << " - this file is in the _files and was changed\n"; // todo: delete
+            else if (!file.is_blocked && !hash.empty() && file.hash != hash) {
                 requests.add(Request(shared_file_path, local_file_path, full_file_path));
-                it->second.save(local_file_path);
-                it->second.hash = hash;
+                file.is_blocked = true;
+                // todo: save temp file only after unblocking -> file.save(local_file_path); https://github.com/DangeL187/SyncWithMe/issues/16
+                file.hash = hash;
             }
             files_amount++;
         }
@@ -62,11 +56,27 @@ void FileUpdater::checkFilesForUpdate(Queue<Request>& requests) {
     }
 }
 
-void FileUpdater::processRequests(Queue<Request>& requests) {
-    while (!requests.isEmpty()) {
-        //std::cout << "processing request from server\n";
-        std::cout << requests.get().toJson() << " #\n";
-        //std::cout << "end of processing\n\n";
+void FileUpdater::processResponses(Queue<Response>& responses) {
+    while (!responses.isEmpty()) {
+        Response response = responses.get();
+
+        std::filesystem::path file_path(response.file);
+        std::string folder = _shared_folders[file_path.string().substr(0, file_path.string().find('/'))];
+
+        if (folder.empty()) continue;
+
+        File& file = _files[file_path.string()];
+
+        if (!file.isValid()) {
+            file = File(folder + "/" + file_path.string().substr(file_path.string().find('/')+1, file_path.string().size()));
+            _files.insert({file_path.string(), file});
+        }
+
+        file.is_blocked = true;
+        file.create();
+        file.change(response.changes);
+        file.hash = FileHasher::hash(file_path.wstring());
+        file.is_blocked = false;
     }
 }
 
@@ -82,28 +92,26 @@ void FileUpdater::removeOrRename(unsigned long long files_amount,
                     std::string local_file_path = file.first;
                     std::string shared_file_path;
 
-                    local_file_path.erase(0, shared_folder.first.size()+1);
-                    shared_file_path = shared_folder.second + "/" + local_file_path;
+                    local_file_path.erase(0, shared_folder.second.size()+1);
+                    shared_file_path = shared_folder.first + "/" + local_file_path;
                     local_file_path = "../TEMP/" + shared_file_path;
 
                     auto renamed_file = renamed_files.find(file.second.hash);
-                    if (renamed_file != _files.end()) {
+                    if (renamed_file != renamed_files.end()) {
                         std::string renamed_file_path = renamed_file->second.name;
                         std::replace(renamed_file_path.begin(), renamed_file_path.end(), '\\', '/');
 
                         std::string local_renamed_file_path = renamed_file_path;
                         std::string shared_renamed_file_path;
-                        local_renamed_file_path.erase(0, shared_folder.first.size()+1);
-                        shared_renamed_file_path = shared_folder.second + "/" + local_renamed_file_path;
+                        local_renamed_file_path.erase(0, shared_folder.second.size()+1);
+                        shared_renamed_file_path = shared_folder.first + "/" + local_renamed_file_path;
                         local_renamed_file_path = "../TEMP/" + shared_renamed_file_path;
 
                         std::filesystem::rename(local_file_path, local_renamed_file_path);
                         requests.add(Request(shared_file_path, shared_renamed_file_path));
-                        std::cout << renamed_file_path << " - this file was renamed\n";
                     } else {
                         std::filesystem::remove(local_file_path);
                         requests.add(Request(shared_file_path, true));
-                        std::cout << local_file_path << " was deleted\n"; // todo: delete
                     }
 
                     _files.erase(file.first);

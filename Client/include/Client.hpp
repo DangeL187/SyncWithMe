@@ -12,8 +12,6 @@
 #include <boost/asio/post.hpp>
 
 #include "FileUpdater.hpp"
-#include "Queue.hpp"
-#include "Request/Request.hpp"
 
 class Client {
 public:
@@ -22,12 +20,12 @@ public:
 private:
     /*========================Client========================*/
     FileUpdater                 _file_updater;
-    Queue<Request>              _requests_received;
-    Queue<Request>              _requests_to_send;
+    Queue<Response>             _responses;
+    Queue<Request>              _requests;
     /*======================================================*/
 
     /*=======================threads========================*/
-    std::mutex                  _process_request_mutex;
+    std::mutex                  _process_responses_mutex;
     std::mutex                  _sender_mutex;
     boost::asio::thread_pool    _thread_pool{2};
     /*======================================================*/

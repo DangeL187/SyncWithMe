@@ -9,22 +9,24 @@
 #include <unordered_set>
 
 #include "File/File.hpp"
-#include "Queue.hpp"
+#include "File/FileHasher.hpp"
+#include "Response/Response.hpp"
 #include "Request/Request.hpp"
+#include "Queue.hpp"
 
 class FileUpdater {
 public:
     FileUpdater();
 
-    void addAllowedFolder(const std::string& folder_path, const std::string& folder_name); // todo: add interaction with allowed folders - removing, etc.
-    void blockFile(const std::string& file_path, bool value);
+    void addSharedFolder(const std::string& folder_name, const std::string& folder_path); // todo: add interaction with allowed folders - removing, etc.
     void checkFilesForUpdate(Queue<Request>& requests);
-    void processRequests(Queue<Request>& requests);
+    void processResponses(Queue<Response>& responses);
 
 private:
-    std::unordered_map<std::string, std::string>        _allowed_folders; // todo: rename to shared
     std::wstring_convert<std::codecvt_utf8<wchar_t>>    _converter;
     std::unordered_map<std::string, File>               _files;
+    std::string                                         _main_folder;
+    std::unordered_map<std::string, std::string>        _shared_folders;
 
     void removeOrRename(unsigned long long files_amount,
                         const std::pair<const std::basic_string<char>, std::basic_string<char>>&,
