@@ -15,3 +15,8 @@ SyncWithMe may be a better option in certain situations:
 2. SyncWithMe tracks changes using [diff template library](https://github.com/cubicdaiya/dtl)
 3. SyncWithMe offers fast synchronization because it uses TCP/IP directly.
 4. Files are stored on your device, so you will be able to edit them using <b> any tool </b> you want and do <b> whatever you want </b> with them, as you literally own them
+
+# Good to know
+1. SyncWithMe uses [DangeL's Client Server Lib]() for sending and receiving information, DCSL is experimental and can cause some problems.
+2. You can rebuild SyncWithMe to use any other method of sending and receiving data if you prefer.
+### SyncWithMe is currently in development, so please be aware.
